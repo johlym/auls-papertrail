@@ -12,4 +12,4 @@ The goal is to add as few things as possible to the system to make this work, so
 
 ## License
 
-The MIT License is found here: (License)[License.md]
+The MIT License is found here: [License](License)
