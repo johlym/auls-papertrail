@@ -1,3 +1,5 @@
+# cribbed code from http://blog.bitmelt.com/2010/01/transparent-tcp-proxy-in-ruby-jruby.html
+
 require "socket"
 
 remote_host = "logs5.papertrailapp.com"
