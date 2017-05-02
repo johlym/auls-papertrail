@@ -7,6 +7,7 @@ remote_port = 36763
 listen_port = 60514
 max_threads = 100
 threads = []
+lines = []
 
 PARSER = /^(\S*)\s(\S*)\s*(\S*)\s*(\S*):\s(.*)$/
 HOSTNAME = "unified-logging"
@@ -32,24 +33,21 @@ while true
         (ready_sockets, dummy, dummy) = IO.select([client_socket, server_socket])
         begin
           ready_sockets.each do |socket|
-            data = socket.readpartial(8192)
-            if socket == client_socket
-              # Read from client, write to server.
-              if data && data.length > 0
+            data = socket.readpartial(1024)
+            if data && data.length > 0
+              lines = data.split(/\n/)
+              puts "Captured #{lines.count} lines"
+              puts "Writing out lines"
+              lines.each do |line|
                 if matched = data.match(PARSER)
                   _, datestamp, timestamp, localhostname, process, message = *matched
                   date_and_timestamp = Time.now.strftime '%Y-%m-%dT%H:%M:%S%:z'
                   rewritten = "<14>1 #{date_and_timestamp} #{HOSTNAME} #{process} - - - #{message}\n"
                   puts rewritten
                 end
-              end
               server_socket.write rewritten
               server_socket.flush
-            else
-              # Read from server, write to client.
-              puts "#{Thread.current}: server->client #{data.inspect}"
-              client_socket.write data
-              client_socket.flush
+              end
             end
           end
         rescue EOFError
