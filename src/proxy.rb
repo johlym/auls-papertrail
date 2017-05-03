@@ -36,14 +36,12 @@ while true
             data = socket.readpartial(1024)
             if data && data.length > 0
               lines = data.split(/\n/)
-              puts "Captured #{lines.count} lines"
-              puts "Writing out lines"
+              puts "Captured #{lines.count} lines in #{data.bytesize} bytes"
               lines.each do |line|
                 if matched = data.match(PARSER)
                   _, datestamp, timestamp, localhostname, process, message = *matched
                   date_and_timestamp = Time.now.strftime '%Y-%m-%dT%H:%M:%S%:z'
                   rewritten = "<14>1 #{date_and_timestamp} #{HOSTNAME} #{process} - - - #{message}\n"
-                  puts rewritten
                 end
               server_socket.write rewritten
               server_socket.flush
