@@ -57,7 +57,7 @@ def production
 
       # Make sure it fits the format we're expecting
       if matched = message.match(@parser)
-        _, _, _, _, process, message = *matched
+        _, datestamp, timestamp, reported_hostname, process, message = *matched
         date_and_timestamp = Time.now.strftime '%Y-%m-%dT%H:%M:%S%:z'
 
         # Convert the log line into a legitimate syslog format
@@ -86,5 +86,6 @@ Thread.new { consumption }
 loop do
   # puts "Queue size: #{@queue.length}"
   sleep 1
+  puts "Queue size: #{@queue.length};"
   true
 end
