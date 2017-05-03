@@ -10,7 +10,6 @@ require 'thread'
 @remote_port = 36763
 @parser = /^(\S*)\s(\S*)\s*(\S*)\s*(\S*):\s(.*)$/
 @hostname = Socket.gethostname
-@count = 0
 @queue = Queue.new
 # Suck in logs from AULS
 
@@ -24,7 +23,6 @@ def consumption
         # Do stuff with the output here. Just printing to show it works
         stdout.each do |line|
           @queue.push(line)
-          @count += 1
         end
       rescue Errno::EIO
         puts "Errno:EIO error, but this probably just means " +
@@ -88,6 +86,5 @@ Thread.new { consumption }
 loop do
   # puts "Queue size: #{@queue.length}"
   sleep 1
-  puts "#{@count} events sent; Queue size: #{@queue.length};"
   true
 end
