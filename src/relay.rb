@@ -10,20 +10,21 @@ require 'thread'
 @remote_port = 36763
 @parser = /^(\S*)\s(\S*)\s*(\S*)\s*(\S*):\s(.*)$/
 @hostname = Socket.gethostname
-
+@count = 0
 @queue = Queue.new
 # Suck in logs from AULS
 
 def consumption
   # Generate the Queue
 
-  cmd = "log stream --style=syslog"
+  cmd = "log stream --style=syslog --level=debug"
   begin
     PTY.spawn( cmd ) do |stdout, stdin, pid|
       begin
         # Do stuff with the output here. Just printing to show it works
         stdout.each do |line|
           @queue.push(line)
+          @count += 1
         end
       rescue Errno::EIO
         puts "Errno:EIO error, but this probably just means " +
@@ -53,11 +54,12 @@ def production
   # Get the oldest message in the queue
   while true
     begin
+      # start_time = Time.now
       message = @queue.pop
 
       # Make sure it fits the format we're expecting
       if matched = message.match(@parser)
-        _, datestamp, timestamp, _, process, message = *matched
+        _, _, _, _, process, message = *matched
         date_and_timestamp = Time.now.strftime '%Y-%m-%dT%H:%M:%S%:z'
 
         # Convert the log line into a legitimate syslog format
@@ -68,7 +70,9 @@ def production
       sender.write formatted
 
       # Flush
-      sender.flush
+      # sender.flush
+      # end_time = Time.now
+      # puts "#{(end_time - start_time) * 1000}ms; Queue size: #{@queue.length}"
     rescue StandardError => e
       puts "Exception: #{e.inspect}"
     end
@@ -82,6 +86,8 @@ puts "Starting consumption thread"
 Thread.new { consumption }
 
 loop do
-  puts "Queue size: #{@queue.length}"
-  sleep 10
+  # puts "Queue size: #{@queue.length}"
+  sleep 1
+  puts "#{@count} events sent; Queue size: #{@queue.length};"
+  true
 end
