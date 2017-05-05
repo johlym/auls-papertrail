@@ -1,17 +1,31 @@
-# A simple FIFO AULS relay for macOS 10.12 and Papertrail
+################################################################################
+#                                                                              #
+# Axe                                                                          #
+# A simple FIFO AULS relay for macOS 10.12 and Papertrail                      #
+#                                                                              #
+################################################################################
 
 require 'pty'
 require 'socket'
 require 'thread'
+require 'yaml'
 
-# The config
+#TODO: Parse the YAML file and loads its values into the ivars below
+
+## The config ##
 
 @remote_host = "logs5.papertrailapp.com"
 @remote_port = 36763
-@parser = /^(\S*)\s(\S*)\s*(\S*)\s*(\S*):\s(.*)$/
 @hostname = Socket.gethostname
+
+## Generate the Queue ##
 @queue = Queue.new
-# Suck in logs from AULS
+
+## Set up the regex for parsing the AULS stream ##
+
+@parser = /^(\S*)\s(\S*)\s*(\S*)\s*(\S*):\s(.*)$/
+
+## Suck in logs from AULS ##
 
 def consumption
   # Generate the Queue
@@ -34,7 +48,7 @@ def consumption
   end
 end
 
-# Push logs to Papertrail
+## Push logs to Papertrail ##
 
 def production
   puts "Creating a connection"
@@ -58,7 +72,12 @@ def production
       # Make sure it fits the format we're expecting
       if matched = message.match(@parser)
         _, datestamp, timestamp, reported_hostname, process, message = *matched
-        date_and_timestamp = Time.now.strftime '%Y-%m-%dT%H:%M:%S%:z'
+
+        # Omit the timezone offset since it's formattted incorrectly.
+        timestamp = timestamp[0...-5]
+        tz_offset = Time.now.strftime '%:z'
+        date_and_timestamp = "#{datestamp}T#{timestamp}#{tz_offset}"
+        # date_and_timestamp = Time.now.strftime '%Y-%m-%dT%H:%M:%S%:z'
 
         # Convert the log line into a legitimate syslog format
         formatted = "<14>1 #{date_and_timestamp} #{@hostname} #{process} - - - #{message}\n"
@@ -77,6 +96,8 @@ def production
   end
 end
 
+## Start the threads ##
+
 puts "Starting production thread"
 Thread.new { production }
 
@@ -86,6 +107,8 @@ Thread.new { consumption }
 loop do
   # puts "Queue size: #{@queue.length}"
   sleep 1
-  puts "Queue size: #{@queue.length};"
+  if @queue.length > 0
+    puts "Logs not sending in real time; length: #{@queue.length}"
+  end
   true
 end

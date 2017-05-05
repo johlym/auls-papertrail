@@ -1,0 +1,7 @@
+# Axe config file
+
+destination: # Where to send logs
+  host: {DESTHOST}
+  port: {DESTPORT}
+hostname: {HOSTNAME} # Set the hostname here or 'system' to let Axe figure it out
+level: {LEVEL} # Options: default, info, debug
